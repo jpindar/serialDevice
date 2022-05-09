@@ -20,6 +20,7 @@ import logging
 import time
 import serial
 import serial.tools.list_ports
+from typing import List, Dict, Optional, Any, Union
 
 read_delay = 0.2
 baud_rate = 19200
@@ -28,14 +29,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# noinspection PySimplifyBooleanCheck
-def get_ports():
+def get_ports() -> List[Union[int, str]]:
     """
     ask pySerial for a list of com ports
-    :return: a list of strings, each representing an integer
     """
-    possible_ports = serial.tools.list_ports.comports()
-    ports = []
+    possible_ports: List[serial.ListPortInfo] = serial.tools.list_ports.comports()
+    ports: List[Union[int, str]] = []
     for i in possible_ports:
         s = str(i.device) + ' ' + str(i.description) + ' ' + str(i.hwid)
         logger.info(s)
@@ -51,16 +50,16 @@ class SerialDevice:
     """
     An object that represents a generic serial device
     """
+
     def __init__(self):
         """
         Constructor for serial device, no parameters
         This constructor just creates the object, doesn't give it a serial port
-        :rtype : SerialDevice
         """
         self.comPort = None
         self.port_num = None
 
-    def open_port(self, connection_info):
+    def open_port(self, connection_info: List) -> None:
         """
         opens a serial port
         connection_info[0] should be an integer, 0 meaning COM1, etc
@@ -89,22 +88,18 @@ class SerialDevice:
             logger.warning("SerialDevice.openPort: Can't open that serial port\r\n")
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
-            # TODO raise an appropriate exception here?
-            return False
+            raise e
         except Exception as e:
             logger.warning("SerialDevice.openPort: Can't open that serial port\r\n")
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
             raise e
         else:
-            # assert isinstance(self.comPort, pyvisa.resources.serial.SerialInstrument)
             logger.info("SerialDevice.openPort: opened a " + str(self.comPort.__class__))
-            return True
 
-    def is_open(self):
+    def is_open(self) -> bool:
         """
         This is really just checking if open_port() succeeded
-        :rtype: boolean
         """
         if not hasattr(self, 'comPort'):
             logger.warning("is_open(): com port does not exist")
@@ -117,7 +112,7 @@ class SerialDevice:
             return False
         return True
 
-    def close_port(self):
+    def close_port(self) -> None:
         if not hasattr(self, 'comPort'):
             return
         if not hasattr(self.comPort, 'close'):
@@ -128,7 +123,7 @@ class SerialDevice:
             logger.warning(e.__class__)
             raise e
 
-    def write(self, msg):
+    def write(self, msg: str) -> None:
         """
         send a string
         don't need to check if port is open, comport.write() does that
@@ -138,11 +133,10 @@ class SerialDevice:
         """
         # self.comPort.reset_input_buffer()
         # self.comPort.reset_output_buffer()
-        response = None
         if not self.is_open():  # this only checks the higher level software, not the actual port
             logger.warning("can't write to the serial port because it is not open")
             # TODO raise an appropriate exception here
-            return response
+            return
         # logger.info("SerialDevice.write: writing " + str(msg) + " to serial port")
         try:
             self.comPort.write(msg.encode(encoding='UTF-8'))
@@ -163,11 +157,10 @@ class SerialDevice:
             logger.error(e.__class__)
             raise e
 
-    def read(self):
+    def read(self) -> Optional[str]:
         """
         reads a response from the serial port
         TODO: investigate possible timing issues: is self.comPort.readline() slow ?
-        : rtype: string
         """
         r_bytes = None
         # delay was 0.2 for old, slow BBUQ device
@@ -176,6 +169,7 @@ class SerialDevice:
             logger.warning("can't read from the serial port because it is not open")
             # TODO raise an appropriate exception here - IOError?
             return None
+        r_bytes: bytearray = bytearray()
         try:
             # print(time.time())
             # r_bytes = self.comPort.readline()
@@ -207,7 +201,7 @@ class SerialDevice:
             logger.warning(e.__cause__)
             return None
         else:
-            r_str = r_bytes.decode(encoding='UTF-8')
+            r_str: str = r_bytes.decode(encoding='UTF-8')
             return r_str.strip('\r\n')
 
     def _read_until(self, terminator=serial.LF, max_size=1000):
@@ -218,8 +212,9 @@ class SerialDevice:
         But it runs faster here?
         """
         length_of_termination = len(terminator)
-        line = bytearray()
+        line: bytearray = bytearray()
         count = 0
+        c: bytes = bytes()
         while True:
             c = self.comPort.read(1)
             if c:
@@ -233,7 +228,7 @@ class SerialDevice:
                 break
         return line
 
-    def _readline(self, terminator='\r', max_size=1000):
+    def _readline(self, terminator='\r', max_size=1000) -> bytearray:
         """
         implemented this myself because PySerial's readline() is extremely slow
         :param terminator: read until you receive this termination character(s)
@@ -242,8 +237,9 @@ class SerialDevice:
         """
         c = None
         length_of_termination = len(terminator)
-        line = bytearray()
+        line: bytearray = bytearray()
         count = 0
+        c: bytes = bytes()
         try:
             while self.comPort.inWaiting() > 0:
                 # c = self.comPort.read(self.comPort.inWaiting())   # would this be faster?
@@ -263,5 +259,3 @@ class SerialDevice:
             raise e  # let .read() handle it
 
         return line
-
-
