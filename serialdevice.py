@@ -63,9 +63,6 @@ class SerialDevice:
         """
         opens a serial port
         connection_info[0] should be an integer, 0 meaning COM1, etc
-        returns True if it succeeded, False if there was an error
-        :param connection_info: a list, 0th element is an integer
-        :return: boolean
         """
         self.close_port()
         self.port_num = connection_info[0]
@@ -126,10 +123,6 @@ class SerialDevice:
     def write(self, msg: str) -> None:
         """
         send a string
-        don't need to check if port is open, comport.write() does that
-
-        :param msg: the string to send
-        :return: none
         """
         # self.comPort.reset_input_buffer()
         # self.comPort.reset_output_buffer()
@@ -162,7 +155,6 @@ class SerialDevice:
         reads a response from the serial port
         TODO: investigate possible timing issues: is self.comPort.readline() slow ?
         """
-        r_bytes = None
         # delay was 0.2 for old, slow BBUQ device
         # time.sleep(read_delay)  # read can fail if no delay here, 0.2 works
         if not self.is_open():  # this only checks the higher level software, not the actual port
@@ -204,7 +196,7 @@ class SerialDevice:
             r_str: str = r_bytes.decode(encoding='UTF-8')
             return r_str.strip('\r\n')
 
-    def _read_until(self, terminator=serial.LF, max_size=1000):
+    def _read_until(self, terminator=serial.LF, max_size=1000) -> bytearray:
         """
         Read until a termination sequence is found, the size
         is exceeded or until timeout occurs.
@@ -231,11 +223,8 @@ class SerialDevice:
     def _readline(self, terminator='\r', max_size=1000) -> bytearray:
         """
         implemented this myself because PySerial's readline() is extremely slow
-        :param terminator: read until you receive this termination character(s)
-        :return: bytes (because that's what the original .readline() returns)
         #  the default value of max_size is a completely arbitrary number
         """
-        c = None
         length_of_termination = len(terminator)
         line: bytearray = bytearray()
         count = 0
