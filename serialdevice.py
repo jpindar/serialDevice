@@ -24,13 +24,8 @@ import serial.tools.list_ports
 read_delay = 0.2
 baud_rate = 19200
 
-logger = None  # don't create the logger until after the main program creates it's logger
-
-
-def init_logging():
-    global logger
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 # noinspection PySimplifyBooleanCheck
