@@ -150,7 +150,7 @@ class SerialDevice:
             logger.error(e.__class__)
             raise e
 
-    def read(self) -> Optional[str]:
+    def read(self, terminator=serial.LF, max_size=1000) -> Optional[str]:
         """
         reads a response from the serial port
         TODO: investigate possible timing issues: is self.comPort.readline() slow ?
@@ -164,11 +164,11 @@ class SerialDevice:
         r_bytes: bytearray = bytearray()
         try:
             # print(time.time())
-            # r_bytes = self.comPort.readline()
-            # r_bytes = self.comPort.read_until(serial.CR, 100)
-            # r_bytes = self._read_until(serial.CR, 1000)
-            r_bytes = self._readline()
-            # print(time.time())
+            # r_bytes = self.comPort.readline(max_size)
+            r_bytes = self.comPort.read_until(terminator, max_size)
+            # r_bytes = self._read_until(terminator, max_size)
+            # r_bytes = self._readline(terminator, max_size)
+            # print(time.time()).
         except serial.PortNotOpenError as e:
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
@@ -217,10 +217,11 @@ class SerialDevice:
                 if max_size is not None and count >= max_size:
                     break
             else:
+                logger.warning("read timeout")
                 break
         return line
 
-    def _readline(self, terminator='\r', max_size=1000) -> bytearray:
+    def _readline(self, terminator='\n', max_size=1000) -> bytearray:
         """
         implemented this myself because PySerial's readline() is extremely slow
         #  the default value of max_size is a completely arbitrary number
@@ -241,6 +242,7 @@ class SerialDevice:
                     if count > max_size:
                         break
                 else:
+                    logger.warning("read timeout")
                     break
         except Exception as e:
             logger.error("in _readline")
