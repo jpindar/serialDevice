@@ -168,7 +168,7 @@ class SerialDevice:
             r_bytes = self.comPort.read_until(terminator, max_size)
             # r_bytes = self._read_until(terminator, max_size)
             # r_bytes = self._readline(terminator, max_size)
-            # print(time.time()).
+            # print(time.time())
         except serial.PortNotOpenError as e:
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
@@ -196,7 +196,7 @@ class SerialDevice:
             r_str: str = r_bytes.decode(encoding='UTF-8')
             return r_str.strip('\r\n')
 
-    def _read_until(self, terminator=serial.LF, max_size=1000) -> bytearray:
+    def _read_until(self, terminator: Union[str, bytes] = serial.LF, max_size=1000) -> bytearray:
         """
         Read until a termination sequence is found, the size
         is exceeded or until timeout occurs.
@@ -221,7 +221,7 @@ class SerialDevice:
                 break
         return line
 
-    def _readline(self, terminator='\n', max_size=1000) -> bytearray:
+    def _readline(self, terminator: Union[str, bytes] = serial.LF, max_size=1000) -> bytearray:
         """
         implemented this myself because PySerial's readline() is extremely slow
         #  the default value of max_size is a completely arbitrary number
