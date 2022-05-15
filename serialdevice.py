@@ -22,8 +22,8 @@ import serial
 import serial.tools.list_ports
 from typing import List, Dict, Optional, Any, Union
 
-read_delay = 0.2
-baud_rate = 19200
+
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -58,6 +58,10 @@ class SerialDevice:
         """
         self.comPort = None
         self.port_num = None
+        self.baud_rate = 19200
+        self.read_delay = 0.2
+        self.timeout = 2
+        self.write_timeout = 2
 
     def open_port(self, connection_info: List) -> None:
         """
@@ -70,12 +74,12 @@ class SerialDevice:
         logger.info("opening serial port " + port_name)
         try:
             self.comPort = serial.Serial(port=port_name,
-                                         baudrate=baud_rate,
+                                         baudrate=self.baud_rate,
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_ONE,
                                          bytesize=serial.EIGHTBITS,
-                                         timeout=2,
-                                         write_timeout=2)
+                                         timeout=self.timeout,
+                                         write_timeout=self.write_timeout)
         except ValueError as e:
             logger.warning("SerialDevice.openPort: Serial port setting out of range\r\n")
             logger.warning(e.__class__)
@@ -95,9 +99,6 @@ class SerialDevice:
             logger.info("SerialDevice.openPort: opened a " + str(self.comPort.__class__))
 
     def is_open(self) -> bool:
-        """
-        This is really just checking if open_port() succeeded
-        """
         if not hasattr(self, 'comPort'):
             logger.warning("is_open(): com port does not exist")
             return False
