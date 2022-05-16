@@ -23,22 +23,21 @@ import serial.tools.list_ports
 from typing import List, Dict, Optional, Any, Union
 
 
-
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
 def get_ports() -> List[Union[int, str]]:
     """
-    ask pySerial for a list of com ports
+    ask pySerial for a list of serial ports
     """
     possible_ports: List[serial.ListPortInfo] = serial.tools.list_ports.comports()
     ports: List[Union[int, str]] = []
     for i in possible_ports:
         s = str(i.device) + ' ' + str(i.description) + ' ' + str(i.hwid)
         logger.info(s)
-        s = i.device   # something like 'COM4'
+        s = i.device   # something like 'COM4', depending on the OS
+        # TODO make this crossplatform
         ports.append(int(s[3:]))  # from position 3 to the end, to handle multi-digit port numbers
     logger.info("ports reported by pySerial:" + str(ports))
     if (ports is None) or (ports == []):
@@ -56,7 +55,7 @@ class SerialDevice:
         Constructor for serial device, no parameters
         This constructor just creates the object, doesn't give it a serial port
         """
-        self.comPort = None
+        self.port = None
         self.port_num = None
         self.baud_rate = 19200
         self.read_delay = 0.2
@@ -70,10 +69,11 @@ class SerialDevice:
         """
         self.close_port()
         self.port_num = connection_info[0]
+        # TODO make this crossplatform
         port_name = "COM" + str(self.port_num)
         logger.info("opening serial port " + port_name)
         try:
-            self.comPort = serial.Serial(port=port_name,
+            self.port = serial.Serial(port=port_name,
                                          baudrate=self.baud_rate,
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_ONE,
@@ -83,12 +83,13 @@ class SerialDevice:
         except ValueError as e:
             logger.warning("SerialDevice.openPort: Serial port setting out of range\r\n")
             logger.warning(e.__class__)
-            # logger.warn(e.__doc__)
+            logger.warning(e.__doc__)
             raise e
         except (serial.SerialException, serial.SerialTimeoutException) as e:
             logger.warning("SerialDevice.openPort: Can't open that serial port\r\n")
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
+            logger.warning(e.args[0])   # or  just args
             raise e
         except Exception as e:
             logger.warning("SerialDevice.openPort: Can't open that serial port\r\n")
@@ -96,27 +97,27 @@ class SerialDevice:
             logger.warning(e.__doc__)
             raise e
         else:
-            logger.info("SerialDevice.openPort: opened a " + str(self.comPort.__class__))
+            logger.info("SerialDevice.openPort: opened a " + str(self.port.__class__))
 
     def is_open(self) -> bool:
-        if not hasattr(self, 'comPort'):
-            logger.warning("is_open(): com port does not exist")
+        if not hasattr(self, 'port'):
+            logger.warning("is_open(): serial port does not exist")
             return False
-        if self.comPort is None:
-            logger.warning("is_open(): com port does not exist")
+        if self.port is None:
+            logger.warning("is_open(): serial port does not exist")
             return False
-        if not self.comPort.isOpen():
-            logger.warning("is_open(): comPort.isOpen() is false")
+        if not self.port.isOpen():
+            logger.warning("is_open(): port.isOpen() is false")
             return False
         return True
 
     def close_port(self) -> None:
-        if not hasattr(self, 'comPort'):
+        if not hasattr(self, 'port'):
             return
-        if not hasattr(self.comPort, 'close'):
+        if not hasattr(self.port, 'close'):
             return
         try:
-            self.comPort.close()
+            self.port.close()
         except Exception as e:
             logger.warning(e.__class__)
             raise e
@@ -125,15 +126,15 @@ class SerialDevice:
         """
         send a string
         """
-        # self.comPort.reset_input_buffer()
-        # self.comPort.reset_output_buffer()
+        # self.port.reset_input_buffer()
+        # self.port.reset_output_buffer()
         if not self.is_open():  # this only checks the higher level software, not the actual port
             logger.warning("can't write to the serial port because it is not open")
             # TODO raise an appropriate exception here
             return
         # logger.info("SerialDevice.write: writing " + str(msg) + " to serial port")
         try:
-            self.comPort.write(msg.encode(encoding='UTF-8'))
+            self.port.write(msg.encode(encoding='UTF-8'))
         # if the port was never opened it would cause an attribute error
         # but that would be detected by the self.is_open
         except serial.PortNotOpenError as e:
@@ -154,7 +155,7 @@ class SerialDevice:
     def read(self, terminator=serial.LF, max_size=1000) -> Optional[str]:
         """
         reads a response from the serial port
-        TODO: investigate possible timing issues: is self.comPort.readline() slow ?
+        TODO: investigate possible timing issues: is self.port.readline() slow ?
         """
         # delay was 0.2 for old, slow BBUQ device
         # time.sleep(read_delay)  # read can fail if no delay here, 0.2 works
@@ -165,8 +166,8 @@ class SerialDevice:
         r_bytes: bytearray = bytearray()
         try:
             # print(time.time())
-            # r_bytes = self.comPort.readline(max_size)
-            r_bytes = self.comPort.read_until(terminator, max_size)
+            # r_bytes = self.port.readline(max_size)
+            r_bytes = self.port.read_until(terminator, max_size)
             # r_bytes = self._read_until(terminator, max_size)
             # r_bytes = self._readline(terminator, max_size)
             # print(time.time())
@@ -209,7 +210,7 @@ class SerialDevice:
         count = 0
         c: bytes = bytes()
         while True:
-            c = self.comPort.read(1)
+            c = self.port.read(1)
             if c:
                 line += c
                 count += 1
@@ -232,9 +233,9 @@ class SerialDevice:
         count = 0
         c: bytes = bytes()
         try:
-            while self.comPort.inWaiting() > 0:
-                # c = self.comPort.read(self.comPort.inWaiting())   # would this be faster?
-                c = self.comPort.read(1)
+            while self.port.inWaiting() > 0:
+                # c = self.port.read(self.port.inWaiting())   # would this be faster?
+                c = self.port.read(1)
                 if c:
                     line += c
                     count += 1
