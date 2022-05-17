@@ -72,10 +72,10 @@ class SerialDevice:
         if not connection_info is None:
             self.port_num = connection_info[0]
         # TODO make this crossplatform
-        port_name = "COM" + str(self.port_num)
-        logger.info("opening serial port " + port_name)
+        self.port_name = "COM" + str(self.port_num)
+        logger.info("opening serial port " + self.port_name)
         try:
-            self.port = serial.Serial(port=port_name,
+            self.port = serial.Serial(port=self.port_name,
                                          baudrate=self.baud_rate,
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_ONE,
@@ -99,7 +99,7 @@ class SerialDevice:
             logger.warning(e.__doc__)
             raise e
         else:
-            logger.info("SerialDevice.openPort: opened a " + str(self.port.__class__))
+            logger.info("opened a " + str(self.port.__class__))
 
     def is_open(self) -> bool:
         if not hasattr(self, 'port'):
