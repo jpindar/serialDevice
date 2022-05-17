@@ -63,13 +63,14 @@ class SerialDevice:
         self.write_timeout = 2
         self.read_mode = 1
 
-    def open_port(self, connection_info: List) -> None:
+    def open_port(self, connection_info: List= None) -> None:
         """
         opens a serial port
         connection_info[0] should be an integer, 0 meaning COM1, etc
         """
         self.close_port()
-        self.port_num = connection_info[0]
+        if not connection_info is None:
+            self.port_num = connection_info[0]
         # TODO make this crossplatform
         port_name = "COM" + str(self.port_num)
         logger.info("opening serial port " + port_name)
