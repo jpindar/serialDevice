@@ -61,6 +61,7 @@ class SerialDevice:
         self.read_delay = 0.2
         self.timeout = 2
         self.write_timeout = 2
+        self.read_mode = 1
 
     def open_port(self, connection_info: List) -> None:
         """
@@ -152,11 +153,13 @@ class SerialDevice:
             logger.error(e.__class__)
             raise e
 
-    def read(self, terminator=serial.LF, max_size=1000) -> Optional[str]:
+    def read(self, terminator=serial.LF, max_size=1000, mode=None) -> Optional[str]:
         """
         reads a response from the serial port
         TODO: investigate possible timing issues: is self.port.readline() slow ?
         """
+        if mode == None:
+            mode = self.read_mode
         # delay was 0.2 for old, slow BBUQ device
         # time.sleep(read_delay)  # read can fail if no delay here, 0.2 works
         if not self.is_open():  # this only checks the higher level software, not the actual port
@@ -166,10 +169,14 @@ class SerialDevice:
         r_bytes: bytearray = bytearray()
         try:
             # print(time.time())
-            # r_bytes = self.port.readline(max_size)
-            r_bytes = self.port.read_until(terminator, max_size)
-            # r_bytes = self._read_until(terminator, max_size)
-            # r_bytes = self._readline(terminator, max_size)
+            if mode == 1:
+                r_bytes = self.port.readline(max_size)
+            elif mode == 2:
+                r_bytes = self.port.read_until(terminator, max_size)
+            elif mode == 3:
+                r_bytes = self._read_until(terminator, max_size)
+            else:
+                r_bytes = self._readline(terminator, max_size)
             # print(time.time())
         except serial.PortNotOpenError as e:
             logger.warning(e.__class__)
