@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument,line-too-long
 """
 File: serialdevice_pyserial.py
 
@@ -47,13 +46,13 @@ def get_ports() -> List[Union[int, str]]:
 
 class SerialDevice:
     """
-    An object that represents a generic serial device
+    An object that represents a generic device accessed via a serial port
     """
 
     def __init__(self):
         """
         Constructor for serial device, no parameters
-        This constructor just creates the object, doesn't give it a serial port
+        This constructor just creates the object, doesn't open the serial port
         """
         self.port = None
         self.port_num = None
@@ -127,10 +126,11 @@ class SerialDevice:
     def write(self, msg: str) -> None:
         """
         send a string
+        TODO: consider adding a termintion if one is not included
         """
         # self.port.reset_input_buffer()
         # self.port.reset_output_buffer()
-        if not self.is_open():  # this only checks the higher level software, not the actual port
+        if not self.is_open():
             logger.warning("can't write to the serial port because it is not open")
             # TODO raise an appropriate exception here
             return
@@ -150,7 +150,7 @@ class SerialDevice:
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
             raise e
-        except Exception as e:  # catching all exceptions is OK as long as we re-raise them
+        except Exception as e:
             logger.error(e.__class__)
             raise e
 
