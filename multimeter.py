@@ -20,7 +20,8 @@ class Multimeter(serialdevice.SerialDevice):
     controls a Fluke 8845A digital multimeter
     """
     default_address = 5  # address to use if optional parameter is not supplied by caller
-    display_name = 'Fluke Multimeter' # name to use in GUI messages etc.
+    default_baud = 19200
+    display_name = 'Fluke Multimeter'  # name to use in GUI messages etc.
     ID_QUERY = "*IDN?\n"
     GOOD_ID_RESPONSE = "FLUKE,8845A,9344019,09/29/06-16:59"  # when in 8845A mode
     GOOD_ID_RESPONSE_45 = "FLUKE, 45, 9344019, 2.0 D2.0"  # when in Fluke 45 emulation mode
@@ -30,11 +31,11 @@ class Multimeter(serialdevice.SerialDevice):
     timeout = 5.0
 
 
-    def __init__(self, address: int = default_address):
+    def __init__(self, address: int = default_address, baud=default_baud):
         super().__init__()
         self.port_num = address
-        self.baud_rate = 19200
-        self.open_port() # defaults to self.port_num
+        self.baud_rate = baud
+        self.open_port()
 
     def reset(self):
         self.write("*rst\n")
@@ -58,7 +59,7 @@ class Multimeter(serialdevice.SerialDevice):
         finished = False
         while not finished:
             try:
-                logger.info("sending <" + cmd +">")
+                logger.info("sending <" + cmd + ">")
                 self.write(cmd)
                 time.sleep(self.read_delay)
                 response = self.read()
@@ -104,7 +105,7 @@ class Multimeter(serialdevice.SerialDevice):
         """
         s = None
         cmd = "MEAS:VOLT:DC? "
-        if  scale is not None:
+        if scale is not None:
             cmd += str(scale)
         cmd += "\n"
         logger.info(str("sending query: " + cmd))
