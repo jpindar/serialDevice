@@ -66,6 +66,7 @@ class SerialDevice:
         """
         opens a serial port
         connection_info[0] should be an integer, 0 meaning COM1, etc
+        or None. If it is None, self.port_num is used.
         """
         self.close_port()
         if not connection_info is None:
@@ -87,7 +88,7 @@ class SerialDevice:
             logger.warning(e.__doc__)
             raise e
         except (serial.SerialException, serial.SerialTimeoutException) as e:
-            logger.warning("SerialDevice.openPort: Can't open that serial port\r\n")
+            logger.warning("SerialDevice.openPort: Can't open that serial port")
             logger.warning(e.__class__)
             logger.warning(e.__doc__)
             logger.warning(e.args[0])   # or  just args

@@ -18,6 +18,7 @@ logging.basicConfig(filename=log_filename, filemode='a', format='%(levelname)-8s
 logger.setLevel(logging.INFO)
 logger.info("Serialdevice demo")
 
+print("Detected serial ports: ", end='')
 print(serialdevice.get_ports())
 
 dut = serialdevice.SerialDevice()
